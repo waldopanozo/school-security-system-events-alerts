@@ -1,0 +1,48 @@
+.idea/
+.vscode/
+**/target/
+**/node_modules/
+**/dist/
+.DS_Store
+
+# OS and editor
+Thumbs.db
+*.swp
+*.swo
+
+# Java / Maven / Spring
+**/.mvn/wrapper/maven-wrapper.jar
+**/dependency-reduced-pom.xml
+**/build/
+**/out/
+*.log
+logs/
+
+# Test and coverage artifacts
+**/surefire-reports/
+**/failsafe-reports/
+**/jacoco.exec
+**/site/
+coverage/
+*.lcov
+
+# Frontend artifacts
+**/.vite/
+**/.cache/
+**/.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-*.local.yml
+
+# Docker overrides and runtime files
+docker-compose.override.yml
+*.pid
+
