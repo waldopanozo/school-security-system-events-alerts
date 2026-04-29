@@ -13,7 +13,7 @@ This document tracks the agreed technical improvements for the MVP so they can b
 
 ## 1) Transactional outbox pattern
 
-- **Status:** `pending`
+- **Status:** `done`
 - **Priority:** `P0`
 - **Goal:** Ensure reliable DB + event publication consistency.
 - **Scope:**
@@ -25,6 +25,7 @@ This document tracks the agreed technical improvements for the MVP so they can b
   - Event creation and outbox write are atomic.
   - No direct domain event publish from service transaction.
   - Integration test proves no lost events on simulated failure.
+  - Relay marks delivered events as `PUBLISHED`.
 
 ## 2) Stronger authentication and authorization
 
@@ -182,3 +183,4 @@ This document tracks the agreed technical improvements for the MVP so they can b
   - Item number
   - PR/commit reference
   - Notes/risks
+- 2026-04-29 | agent | #1 | pending commit | Added outbox table/entity/service/relay, replaced direct Kafka sends in domain service, and added tests for enqueue + publish flow.

@@ -6,8 +6,8 @@ import io.waldopo.schoolsecurity.events.domain.SecurityEvent;
 import io.waldopo.schoolsecurity.events.repo.SecurityEventRepository;
 import io.waldopo.schoolsecurity.notifications.NotificationLog;
 import io.waldopo.schoolsecurity.notifications.NotificationLogRepository;
+import io.waldopo.schoolsecurity.outbox.OutboxService;
 import io.waldopo.schoolsecurity.postmortem.PostmortemRepository;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,29 +17,28 @@ import java.util.UUID;
 
 @Service
 public class SecurityEventService {
-    private static final String TOPIC = "school.security.event.v1";
     private final SecurityEventRepository repository;
     private final NotificationLogRepository notificationRepository;
     private final PostmortemRepository postmortemRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OutboxService outboxService;
 
     public SecurityEventService(
             SecurityEventRepository repository,
             NotificationLogRepository notificationRepository,
             PostmortemRepository postmortemRepository,
-            KafkaTemplate<String, String> kafkaTemplate
+            OutboxService outboxService
     ) {
         this.repository = repository;
         this.notificationRepository = notificationRepository;
         this.postmortemRepository = postmortemRepository;
-        this.kafkaTemplate = kafkaTemplate;
+        this.outboxService = outboxService;
     }
 
     @Transactional
     public SecurityEvent create(CreateEventRequest request, String actor) {
         SecurityEvent event = repository.save(new SecurityEvent(
                 request.type(), request.incidentType(), request.severity(), request.location(), actor));
-        publish("SecurityEventCreated.v1", event.getId(), Map.of("severity", event.getSeverity().name()));
+        outboxService.enqueue("SecurityEventCreated.v1", event.getId(), Map.of("severity", event.getSeverity().name()));
         return event;
     }
 
@@ -48,7 +47,7 @@ public class SecurityEventService {
         SecurityEvent event = find(eventId);
         event.activateAlert();
         simulateNotifications(event);
-        publish("SecurityAlertActivated.v1", eventId, Map.of("status", event.getStatus().name()));
+        outboxService.enqueue("SecurityAlertActivated.v1", eventId, Map.of("status", event.getStatus().name()));
         return repository.save(event);
     }
 
@@ -59,7 +58,7 @@ public class SecurityEventService {
             throw new IllegalStateException("Cannot close event without postmortem");
         }
         event.close();
-        publish("SecurityEventClosed.v1", eventId, Map.of("status", EventStatus.CLOSED.name()));
+        outboxService.enqueue("SecurityEventClosed.v1", eventId, Map.of("status", EventStatus.CLOSED.name()));
         return repository.save(event);
     }
 
@@ -78,13 +77,6 @@ public class SecurityEventService {
                 new NotificationLog(event.getId(), "PUSH", "guardian-app-1", "PUSH_TEMPLATE", "SENT")
         );
         notificationRepository.saveAll(logs);
-        publish("SecurityNotificationDispatched.v1", event.getId(), Map.of("total", logs.size()));
-    }
-
-    private void publish(String eventType, UUID aggregateId, Map<String, Object> payload) {
-        String body = """
-                {"eventType":"%s","eventVersion":"v1","aggregateId":"%s","payload":"%s"}
-                """.formatted(eventType, aggregateId, payload);
-        kafkaTemplate.send(TOPIC, aggregateId.toString(), body);
+        outboxService.enqueue("SecurityNotificationDispatched.v1", event.getId(), Map.of("total", logs.size()));
     }
 }

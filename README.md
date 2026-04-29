@@ -17,6 +17,7 @@ It allows teams to:
 Implemented:
 - Spring Boot backend with versioned API (`/api/v1`), JWT + RBAC, and idempotency.
 - PostgreSQL persistence with Flyway migrations.
+- Transactional outbox pattern (`outbox_event` + relay publisher), avoiding direct Kafka publish inside domain transactions.
 - Kafka event publishing (`school.security.event.v1`).
 - Simulated notifications by channel (`EMAIL`, `SMS`, `PUSH`).
 - React + TypeScript frontend for role-based demo flows.
@@ -142,6 +143,10 @@ docker run --rm -v "$PWD/backend":/app -w /app maven:3.9.9-eclipse-temurin-21 mv
 ```
 
 Result: `BUILD SUCCESS`.
+
+Outbox-specific checks:
+- Event commands write `PENDING` records to `outbox_event` in the same transaction.
+- Relay publishes pending records and marks them as `PUBLISHED`.
 
 Frontend build (executed):
 
