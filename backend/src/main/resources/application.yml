@@ -30,3 +30,6 @@ management:
 app:
   jwt:
     secret: ${JWT_SECRET:change-me-please-change-me-please-123456}
+  outbox:
+    topic: ${OUTBOX_TOPIC:school.security.event.v1}
+    relay-delay-ms: ${OUTBOX_RELAY_DELAY_MS:2000}
